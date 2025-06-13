@@ -314,38 +314,38 @@ module tb_sha256_final_padding();
   // Test that the FIPS 180-4 padding example in chapter
   // 5.1.1 works as intended.
   //----------------------------------------------------------------
-//  task tc1;
-//    begin : tc1
-//      tb_display_state = 1;
-//      tc_ctr = tc_ctr + 1;
-//      $display("TC%2d started: NIST FIPS 180-4 padding example.", tc_ctr);
-//
-//      tb_init_in = 1'h1;
-//      #(CLK_PERIOD);
-//      tb_init_in = 1'h0;
-//
-//      #(CLK_PERIOD);
-//      tb_block_in[511 : 0] = {8'h61, 504'h0};
-//      tb_final_len         = 9'h008;
-//      tb_final_in          = 1'h1;
-//      #(CLK_PERIOD);
-//      tb_final_in          = 1'h0;
-//
-//      #(CLK_PERIOD);
-//      if (tb_block_out == {8'h61, 8'h80, 416'h0,9'h020}) begin
-//	$display("Correct block: 0x%064x", tb_block_out);
-//      end
-//      else begin
-//	$display("Incorrect block: 0x%064x", tb_block_out);
-//	$display("Expected block:  0x%064x", {24'h616263, 8'h80, 416'h0,64'h00000018});
-//	error_ctr = error_ctr + 1;
-//      end
-//
-//      $display("TC%2d completed", tc_ctr);
-//      $display();
-//      tb_display_state = 1;
-//    end
-//  endtask // tc1
+  task tc1;
+    begin : tc1
+      tb_display_state = 1;
+      tc_ctr = tc_ctr + 1;
+      $display("TC%2d started: NIST FIPS 180-4 padding example.", tc_ctr);
+
+      // Init the DUT.
+      tb_init = 1'h1;
+      #(CLK_PERIOD);
+      tb_init = 1'h0;
+
+      #(CLK_PERIOD);
+      tb_block[511 : 0] = {24'h616263, 488'h0};
+      tb_final_len      = 6'd24;
+      tb_final          = 1'h1;
+      #(CLK_PERIOD);
+      tb_final          = 1'h0;
+
+      // Wait a few seconds.
+      #(CLK_PERIOD);
+
+      // Show the block out.
+      $display("Current block: 0x%0128x", tb_padded_block);
+
+      while (!tb_padded_ready) begin
+        #(CLK_PERIOD);
+      end
+
+      // Show the digest.
+      $display("Generated digest: 0x064%x", tb_core_digest);
+    end
+  endtask // tc1
 
 
   //----------------------------------------------------------------
@@ -458,8 +458,7 @@ module tb_sha256_final_padding();
 
       init_sim();
       reset_dut();
-//      tc0();
-//      tc1();
+      tc1();
 //      tc2();
 //      tc3();
 
