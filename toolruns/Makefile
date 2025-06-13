@@ -51,9 +51,6 @@
 #
 #===================================================================
 
-PADDING_SRC = ../src/rtl/sha256_final_padding.v
-PADDING_TB_SRC = ../src/tb/tb_sha256_final_padding.v
-
 WMEM_SRC = ../src/rtl/sha256_w_mem.v
 WMEM_TB_SRC = ../src/tb/tb_sha256_w_mem.v
 
@@ -65,6 +62,9 @@ TOP_TB_SRC = ../src/tb/tb_sha256.v
 
 AXI4_SRC = ../src/interfaces/axi4/rtl/sha256_axi4.v ../src/interfaces/axi4/rtl/sha256_axi4_slave.v $(CORE_SRC)
 AXI4_TB_SRC = ../src/interfaces/axi4/tb/tb_sha256_axi4.v
+
+PADDING_SRC = ../src/rtl/sha256_final_padding.v $(CORE_SRC)
+PADDING_TB_SRC = ../src/tb/tb_sha256_final_padding.v
 
 
 CC = iverilog

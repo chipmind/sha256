@@ -2,11 +2,13 @@
 //
 // tb_sha256_final_padding.v
 // -------------------------
-// Testbench for the sha256 final padding.
+// Testbench for the sha256 final padding. The testbench includes
+// a sha256_core module instance to allow for testing with real
+// testvectors.
 //
 //
 // Author: Joachim Strömbergson
-// Copyright (c) 2024, Assured AB
+// Copyright (c) 2025, Assured AB
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or
@@ -43,7 +45,7 @@ module tb_sha256_final_padding();
   //----------------------------------------------------------------
   parameter DISPLAY_STATE   = 0;
 
-  parameter CLK_HALF_PERIOD = 2;
+  parameter CLK_HALF_PERIOD = 1;
   parameter CLK_PERIOD      = 2 * CLK_HALF_PERIOD;
 
 
@@ -58,17 +60,21 @@ module tb_sha256_final_padding();
 
   reg            tb_clk;
   reg            tb_reset_n;
-  reg            tb_init_in;
-  reg            tb_next_in;
-  reg            tb_final_in;
-  reg [8 : 0]    tb_final_len;
-  reg [511 : 0]  tb_block_in;
-  reg            tb_core_ready;
+  reg            tb_init;
+  reg            tb_next;
+  reg            tb_final;
+  reg [5 : 0]    tb_final_len;
+  reg [511 : 0]  tb_block;
 
-  wire           tb_init_out;
-  wire           tb_next_out;
-  wire           tb_ready_out;
-  wire [511 : 0] tb_block_out;
+  wire           tb_core_ready;
+  wire [255 : 0] tb_core_digest;
+  wire           tb_core_valid;
+  reg            tb_core_mode;
+
+  wire           tb_padded_init;
+  wire           tb_padded_next;
+  wire [511 : 0] tb_padded_block;
+  wire           tb_padded_ready;
 
 
   //----------------------------------------------------------------
@@ -78,52 +84,31 @@ module tb_sha256_final_padding();
 			   .clk(tb_clk),
 			   .reset_n(tb_reset_n),
 
-			   .init_in(tb_init_in),
-			   .next_in(tb_next_in),
-			   .final_in(tb_final_in),
+			   .init_in(tb_init),
+			   .next_in(tb_next),
+			   .final_in(tb_final),
 			   .final_len(tb_final_len),
-			   .block_in(tb_block_in),
+			   .block_in(tb_block),
 
 			   .core_ready(tb_core_ready),
 
-			   .init_out(tb_init_out),
-			   .next_out(tb_next_out),
-			   .ready_out(tb_ready_out),
-			   .block_out(tb_block_out)
+			   .init_out(tb_padded_init),
+			   .next_out(tb_padded_next),
+			   .ready_out(tb_padded_ready),
+			   .block_out(tb_padded_block)
 			  );
 
   sha256_core core(
 		   .clk(tb_clk),
 		   .reset_n(tb_reset_n),
-		   .init(tb_init_out),
-		   .next(tb_next_out),
+		   .init(tb_padded_init),
+		   .next(tb_padded_next),
 		   .mode(tb_core_mode),
-		   .block(tb_block_out),
+		   .block(tb_padded_block),
 		   .ready(tb_core_ready),
 		   .digest(tb_core_digest),
 		   .digest_valid(tb_core_valid)
 		   );
-
-
-  //----------------------------------------------------------------
-  // sha256_core_model
-  //
-  // A very simple model that simulates the input-output begaviour
-  // to some degree. Basically wait for an init or next. Drop
-  // core_ready and wait a few cycles. And then set
-  // core_ready again.
-  //----------------------------------------------------------------
-  always @*
-    begin : sha256_core_model
-      tb_core_ready = 1'h1;
-
-//      if ((init_out) or (next_out)) begin
-	//	#(2 * CLK_PERIOD);
-	//	tb_core_ready = 1'h0;
-	//
-	//	#(10 * CLK_PERIOD);
-//      end
-    end // sha256_core_model
 
 
   //----------------------------------------------------------------
@@ -204,7 +189,7 @@ module tb_sha256_final_padding();
       #(CLK_PERIOD);
       if (tb_display_state)
         begin
-          dump_dut_state();
+//          dump_dut_state();
         end
     end
 
@@ -231,35 +216,35 @@ module tb_sha256_final_padding();
   //----------------------------------------------------------------
   // dump_dut_state()
   //----------------------------------------------------------------
-  task dump_dut_state;
-    begin
-      $display("");
-      $display("DUT state at cycle: %08d", cycle_ctr);
-
-      $display("Inputs:");
-      $display("init_in: %1d, next_in: %1d, final_in: %1d, core_ready: %1d",
-	       dut.init_in, dut.next_in, dut.final_in, dut.core_ready);
-      $display("final_len: 0x%03x", dut.final_len);
-      $display("block_in: 0x%064x", dut.block_in);
-      $display("");
-
-      $display("Outputs:");
-      $display("init_out: %1d, next_out: %1d, ready_out: %1d",
-	       dut.init_out, dut.next_out, dut.ready_out);
-      $display("block_out: 0x%064x", dut.block_out);
-      $display("");
-
-      $display("Internal state:");
-      $display("padding_ctrl_reg: 0x%02x, padding_ctrl_new: 0x%02x, padding_ctrl_we: %1d",
-               dut.sha256_final_padding_ctrl_reg, dut.sha256_final_padding_ctrl_new,
-	       dut.sha256_final_padding_ctrl_we);
-
-      $display("bit_ctr_reg: 0x%016x, bit_ctr_new: 0x%016x, bit_ctr_rst: %1d, bit_ctr_inc: 0x%01x, bit_ctr_we: %1d",
-               dut.bit_ctr_reg, dut.bit_ctr_new, dut.bit_ctr_rst, dut.bit_ctr_inc, dut.bit_ctr_we);
-      $display("");
-      $display("");
-    end
-  endtask // dump_state
+//  task dump_dut_state;
+//    begin
+//      $display("");
+//      $display("DUT state at cycle: %08d", cycle_ctr);
+//
+//      $display("Inputs:");
+//      $display("init_in: %1d, next_in: %1d, final_in: %1d, core_ready: %1d",
+//	       dut.init_in, dut.next_in, dut.final_in, dut.core_ready);
+//      $display("final_len: 0x%03x", dut.final_len);
+//      $display("block_in: 0x%064x", dut.block_in);
+//      $display("");
+//
+//      $display("Outputs:");
+//      $display("init_out: %1d, next_out: %1d, ready_out: %1d",
+//	       dut.init_out, dut.next_out, dut.ready_out);
+//      $display("block_out: 0x%064x", dut.block_out);
+//      $display("");
+//
+//      $display("Internal state:");
+//      $display("padding_ctrl_reg: 0x%02x, padding_ctrl_new: 0x%02x, padding_ctrl_we: %1d",
+//               dut.sha256_final_padding_ctrl_reg, dut.sha256_final_padding_ctrl_new,
+//	       dut.sha256_final_padding_ctrl_we);
+//
+//      $display("bit_ctr_reg: 0x%016x, bit_ctr_new: 0x%016x, bit_ctr_rst: %1d, bit_ctr_inc: 0x%01x, bit_ctr_we: %1d",
+//               dut.bit_ctr_reg, dut.bit_ctr_new, dut.bit_ctr_rst, dut.bit_ctr_inc, dut.bit_ctr_we);
+//      $display("");
+//      $display("");
+//    end
+//  endtask // dump_state
 
 
   //----------------------------------------------------------------
@@ -276,12 +261,12 @@ module tb_sha256_final_padding();
 
       tb_clk           = 1'h0;
       tb_reset_n       = 1'h1;
-      tb_init_in       = 1'h0;
-      tb_next_in       = 1'h0;
-      tb_final_in      = 1'h0;
-      tb_final_len     = 9'h0;
-      tb_block_in      = 512'h0;
-      tb_core_ready    = 1'h1;
+      tb_init          = 1'h0;
+      tb_next          = 1'h0;
+      tb_final         = 1'h0;
+      tb_final_len     = 6'h0;
+      tb_block         = 512'h0;
+      tb_core_mode     = 1'h1;
     end
   endtask // init
 
@@ -290,38 +275,38 @@ module tb_sha256_final_padding();
   // tc0
   // Test that padding for a zero length message is correct.
   //----------------------------------------------------------------
-  task tc0;
-    begin : tc1
-      tb_display_state = 1;
-      tc_ctr = tc_ctr + 1;
-      $display("TC0 started: Padding of a zero length message.");
-
-      tb_init_in = 1'h1;
-      #(CLK_PERIOD);
-      tb_init_in = 1'h0;
-
-      #(CLK_PERIOD);
-      tb_block_in[511 : 0] = {512'h0};
-      tb_final_len         = 9'h000;
-      tb_final_in          = 1'h1;
-      #(CLK_PERIOD);
-      tb_final_in          = 1'h0;
-
-      #(CLK_PERIOD);
-      if (tb_block_out == {8'h80, 495'h0,9'h020}) begin
-	$display("Correct block: 0x%064x", tb_block_out);
-      end
-      else begin
-	$display("Incorrect block: 0x%064x", tb_block_out);
-	$display("Expected block:  0x%064x", {24'h616263, 8'h80, 416'h0,64'h00000018});
-	error_ctr = error_ctr + 1;
-      end
-
-      $display("TC%2d completed", tc_ctr);
-      $display();
-      tb_display_state = 1;
-    end
-  endtask // tc1
+//  task tc0;
+//    begin : tc1
+//      tb_display_state = 1;
+//      tc_ctr = tc_ctr + 1;
+//      $display("TC0 started: Padding of a zero length message.");
+//
+//      tb_init_in = 1'h1;
+//      #(CLK_PERIOD);
+//      tb_init_in = 1'h0;
+//
+//      #(CLK_PERIOD);
+//      tb_block_in[511 : 0] = {512'h0};
+//      tb_final_len         = 9'h000;
+//      tb_final_in          = 1'h1;
+//      #(CLK_PERIOD);
+//      tb_final_in          = 1'h0;
+//
+//      #(CLK_PERIOD);
+//      if (tb_block_out == {8'h80, 495'h0,9'h020}) begin
+//	$display("Correct block: 0x%064x", tb_block_out);
+//      end
+//      else begin
+//	$display("Incorrect block: 0x%064x", tb_block_out);
+//	$display("Expected block:  0x%064x", {24'h616263, 8'h80, 416'h0,64'h00000018});
+//	error_ctr = error_ctr + 1;
+//      end
+//
+//      $display("TC%2d completed", tc_ctr);
+//      $display();
+//      tb_display_state = 1;
+//    end
+//  endtask // tc1
 
 
   //----------------------------------------------------------------
@@ -329,38 +314,38 @@ module tb_sha256_final_padding();
   // Test that the FIPS 180-4 padding example in chapter
   // 5.1.1 works as intended.
   //----------------------------------------------------------------
-  task tc1;
-    begin : tc1
-      tb_display_state = 1;
-      tc_ctr = tc_ctr + 1;
-      $display("TC%2d started: NIST FIPS 180-4 padding example.", tc_ctr);
-
-      tb_init_in = 1'h1;
-      #(CLK_PERIOD);
-      tb_init_in = 1'h0;
-
-      #(CLK_PERIOD);
-      tb_block_in[511 : 0] = {8'h61, 504'h0};
-      tb_final_len         = 9'h008;
-      tb_final_in          = 1'h1;
-      #(CLK_PERIOD);
-      tb_final_in          = 1'h0;
-
-      #(CLK_PERIOD);
-      if (tb_block_out == {8'h61, 8'h80, 416'h0,9'h020}) begin
-	$display("Correct block: 0x%064x", tb_block_out);
-      end
-      else begin
-	$display("Incorrect block: 0x%064x", tb_block_out);
-	$display("Expected block:  0x%064x", {24'h616263, 8'h80, 416'h0,64'h00000018});
-	error_ctr = error_ctr + 1;
-      end
-
-      $display("TC%2d completed", tc_ctr);
-      $display();
-      tb_display_state = 1;
-    end
-  endtask // tc1
+//  task tc1;
+//    begin : tc1
+//      tb_display_state = 1;
+//      tc_ctr = tc_ctr + 1;
+//      $display("TC%2d started: NIST FIPS 180-4 padding example.", tc_ctr);
+//
+//      tb_init_in = 1'h1;
+//      #(CLK_PERIOD);
+//      tb_init_in = 1'h0;
+//
+//      #(CLK_PERIOD);
+//      tb_block_in[511 : 0] = {8'h61, 504'h0};
+//      tb_final_len         = 9'h008;
+//      tb_final_in          = 1'h1;
+//      #(CLK_PERIOD);
+//      tb_final_in          = 1'h0;
+//
+//      #(CLK_PERIOD);
+//      if (tb_block_out == {8'h61, 8'h80, 416'h0,9'h020}) begin
+//	$display("Correct block: 0x%064x", tb_block_out);
+//      end
+//      else begin
+//	$display("Incorrect block: 0x%064x", tb_block_out);
+//	$display("Expected block:  0x%064x", {24'h616263, 8'h80, 416'h0,64'h00000018});
+//	error_ctr = error_ctr + 1;
+//      end
+//
+//      $display("TC%2d completed", tc_ctr);
+//      $display();
+//      tb_display_state = 1;
+//    end
+//  endtask // tc1
 
 
   //----------------------------------------------------------------
@@ -369,38 +354,38 @@ module tb_sha256_final_padding();
   // 5.1.1 with a few more chars. This still fits within the final
   // block.
   //----------------------------------------------------------------
-  task tc2;
-    begin : tc2
-      tb_display_state = 1;
-      tc_ctr = tc_ctr + 1;
-      $display("TC%2d started: Extended NIST FIPS 180-4 padding example.", tc_ctr);
-
-      tb_init_in = 1'h1;
-      #(CLK_PERIOD);
-      tb_init_in = 1'h0;
-
-      #(CLK_PERIOD);
-      tb_block_in[511 : 0] = {72'h616263616263616263, 440'h0};
-      tb_final_len         = 9'h048;
-      tb_final_in          = 1'h1;
-      #(CLK_PERIOD);
-      tb_final_in          = 1'h0;
-
-      #(10 * CLK_PERIOD);
-      if (tb_block_out == {72'h616263616263616263, 8'h80, 368'h0, 64'h00000048}) begin
-	$display("Correct block: 0x%064x", tb_block_out);
-      end
-      else begin
-	$display("Incorrect block: 0x%064x", tb_block_out);
-	$display("Expected block:  0x%064x", {72'h616263616263616263, 8'h80, 368'h0, 64'h00000048});
-	error_ctr = error_ctr + 1;
-      end
-
-      $display("TC%2d completed", tc_ctr);
-      $display();
-      tb_display_state = 0;
-    end
-  endtask // tc2
+//  task tc2;
+//    begin : tc2
+//      tb_display_state = 1;
+//      tc_ctr = tc_ctr + 1;
+//      $display("TC%2d started: Extended NIST FIPS 180-4 padding example.", tc_ctr);
+//
+//      tb_init_in = 1'h1;
+//      #(CLK_PERIOD);
+//      tb_init_in = 1'h0;
+//
+//      #(CLK_PERIOD);
+//      tb_block_in[511 : 0] = {72'h616263616263616263, 440'h0};
+//      tb_final_len         = 9'h048;
+//      tb_final_in          = 1'h1;
+//      #(CLK_PERIOD);
+//      tb_final_in          = 1'h0;
+//
+//      #(10 * CLK_PERIOD);
+//      if (tb_block_out == {72'h616263616263616263, 8'h80, 368'h0, 64'h00000048}) begin
+//	$display("Correct block: 0x%064x", tb_block_out);
+//      end
+//      else begin
+//	$display("Incorrect block: 0x%064x", tb_block_out);
+//	$display("Expected block:  0x%064x", {72'h616263616263616263, 8'h80, 368'h0, 64'h00000048});
+//	error_ctr = error_ctr + 1;
+//      end
+//
+//      $display("TC%2d completed", tc_ctr);
+//      $display();
+//      tb_display_state = 0;
+//    end
+//  endtask // tc2
 
 
   //----------------------------------------------------------------
@@ -409,57 +394,57 @@ module tb_sha256_final_padding();
   // padding does not fit and we get a single one block
   // and a second block with the length at the end.
   //----------------------------------------------------------------
-  task tc3;
-    begin : tc3
-      reg tc2_error;
-      tc2_error = 0;
-      tc_ctr = tc_ctr + 1;
-      $display("TC%2d started: Padding that does not fit in the final block.", tc_ctr);
-
-      tb_init_in = 1'h1;
-      #(CLK_PERIOD);
-      tb_init_in = 1'h0;
-
-      #(CLK_PERIOD);
-      tb_block_in[511 : 0] = {{15{32'h13371337}}, 32'h0};
-      tb_final_len           = 9'h1e0;
-      tb_final_in            = 1'h1;
-
-      if (tb_next_out == 1'h1) begin
-	if (tb_block_out == {{15{32'h13371337}}, 1'h1, 31'h0}) begin
-	  $display("Correct first block: 0x%064x", tb_block_out);
-	end
-	else begin
-	  $display("Incorrect first block:  0x%064x", tb_block_out);
-	  $display("Expected first block:   0x%064x", {{15{32'h13371337}}, 1'h1, 31'h0});
-	  tc2_error = 1;
-	end
-      end
-
-      tb_final_in = 1'h0;
-
-      #(10 * CLK_PERIOD);
-      tb_core_ready = 1'h1;
-      #(CLK_PERIOD);
-      tb_core_ready = 1'h0;
-
-      if (tb_block_out == {{15{32'hdeadbeef}}, 1'h1, 31'h0}) begin
-	$display("Correct second block: 0x%064x", tb_block_out);
-      end
-      else begin
-	$display("Incorrect second block: 0x%064x", tb_block_out);
-	$display("Expected second block:  0x%064x", {{15{32'hdeadbeef}}, 1'h1, 31'h0});
-	tc2_error = 1;
-      end
-
-      if (tc2_error) begin
-	error_ctr = error_ctr + 1;
-      end
-
-      $display("TC%2d completed", tc_ctr);
-      $display();
-    end
-  endtask // tc3
+//  task tc3;
+//    begin : tc3
+//      reg tc2_error;
+//      tc2_error = 0;
+//      tc_ctr = tc_ctr + 1;
+//      $display("TC%2d started: Padding that does not fit in the final block.", tc_ctr);
+//
+//      tb_init_in = 1'h1;
+//      #(CLK_PERIOD);
+//      tb_init_in = 1'h0;
+//
+//      #(CLK_PERIOD);
+//      tb_block_in[511 : 0] = {{15{32'h13371337}}, 32'h0};
+//      tb_final_len           = 9'h1e0;
+//      tb_final_in            = 1'h1;
+//
+//      if (tb_next_out == 1'h1) begin
+//	if (tb_block_out == {{15{32'h13371337}}, 1'h1, 31'h0}) begin
+//	  $display("Correct first block: 0x%064x", tb_block_out);
+//	end
+//	else begin
+//	  $display("Incorrect first block:  0x%064x", tb_block_out);
+//	  $display("Expected first block:   0x%064x", {{15{32'h13371337}}, 1'h1, 31'h0});
+//	  tc2_error = 1;
+//	end
+//      end
+//
+//      tb_final_in = 1'h0;
+//
+//      #(10 * CLK_PERIOD);
+//      tb_core_ready = 1'h1;
+//      #(CLK_PERIOD);
+//      tb_core_ready = 1'h0;
+//
+//      if (tb_block_out == {{15{32'hdeadbeef}}, 1'h1, 31'h0}) begin
+//	$display("Correct second block: 0x%064x", tb_block_out);
+//      end
+//      else begin
+//	$display("Incorrect second block: 0x%064x", tb_block_out);
+//	$display("Expected second block:  0x%064x", {{15{32'hdeadbeef}}, 1'h1, 31'h0});
+//	tc2_error = 1;
+//      end
+//
+//      if (tc2_error) begin
+//	error_ctr = error_ctr + 1;
+//      end
+//
+//      $display("TC%2d completed", tc_ctr);
+//      $display();
+//    end
+//  endtask // tc3
 
 
   //----------------------------------------------------------------
@@ -473,7 +458,7 @@ module tb_sha256_final_padding();
 
       init_sim();
       reset_dut();
-      tc0();
+//      tc0();
 //      tc1();
 //      tc2();
 //      tc3();
