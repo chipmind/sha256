@@ -12,6 +12,8 @@ test*
 ## Log files
 *.log
 
+## Wave dunp files.
+*.vcd
 
 ## Subdirs in toolruns for vendor tools
 /toolruns/quartus
