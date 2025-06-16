@@ -122,6 +122,10 @@ module sha256_core(
   reg [31 : 0] H7_new;
   reg          H_we;
 
+  reg first_block_reg;
+  reg first_block_new;
+  reg first_block_we;
+
   reg [5 : 0] t_ctr_reg;
   reg [5 : 0] t_ctr_new;
   reg         t_ctr_we;
@@ -145,8 +149,6 @@ module sha256_core(
 
   reg state_init;
   reg state_update;
-
-  reg first_block;
 
   reg ready_flag;
 
@@ -220,6 +222,7 @@ module sha256_core(
           H5_reg           <= 32'h0;
           H6_reg           <= 32'h0;
           H7_reg           <= 32'h0;
+          first_block_reg  <= 1'h1;
           digest_valid_reg <= 0;
           t_ctr_reg        <= 6'h0;
           sha256_ctrl_reg  <= CTRL_IDLE;
@@ -250,6 +253,10 @@ module sha256_core(
               H6_reg <= H6_new;
               H7_reg <= H7_new;
             end
+
+          if (first_block_we) begin
+            first_block_reg <= first_block_new;
+          end
 
           if (t_ctr_we)
             t_ctr_reg <= t_ctr_new;
@@ -383,7 +390,7 @@ module sha256_core(
       if (state_init)
         begin
           a_h_we = 1;
-          if (first_block)
+          if (first_block_reg)
             begin
               if (mode)
                 begin
@@ -474,8 +481,10 @@ module sha256_core(
       state_init       = 0;
       state_update     = 0;
 
-      first_block      = 0;
       ready_flag       = 0;
+
+      first_block_new = 0;
+      first_block_we  = 0;
 
       w_init           = 0;
       w_next           = 0;
@@ -497,19 +506,17 @@ module sha256_core(
 
             if (init)
               begin
-                digest_init      = 1;
-                w_init           = 1;
-                state_init       = 1;
-                first_block      = 1;
-                t_ctr_rst        = 1;
-                digest_valid_new = 0;
-                digest_valid_we  = 1;
-                sha256_ctrl_new  = CTRL_ROUNDS;
-                sha256_ctrl_we   = 1;
+                first_block_new = 1;
+                first_block_we  = 1;
               end
 
             if (next)
               begin
+                if (first_block_reg) begin
+                  digest_init      = 1;
+                  first_block_new  = 0;
+                  first_block_we   = 1;
+                end
                 t_ctr_rst        = 1;
                 w_init           = 1;
                 state_init       = 1;

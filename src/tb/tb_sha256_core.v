@@ -145,8 +145,8 @@ module tb_sha256_core();
                dut.digest_init, dut.digest_update);
       $display("state_init      = 0x%01x, state_update  = 0x%01x",
                dut.state_init, dut.state_update);
-      $display("first_block     = 0x%01x, ready_flag    = 0x%01x, w_init    = 0x%01x",
-               dut.first_block, dut.ready_flag, dut.w_init);
+      $display("first_block_reg = 0x%01x, ready_flag    = 0x%01x, w_init    = 0x%01x",
+               dut.first_block_reg, dut.ready_flag, dut.w_init);
       $display("t_ctr_inc       = 0x%01x, t_ctr_rst     = 0x%01x, t_ctr_reg = 0x%02x",
                dut.t_ctr_inc, dut.t_ctr_rst, dut.t_ctr_reg);
       $display("");
@@ -260,10 +260,10 @@ module tb_sha256_core();
      tc_ctr = tc_ctr + 1;
 
      tb_block = block;
-     tb_init = 1;
+     tb_next = 1;
      #(CLK_PERIOD);
+     tb_next = 0;
      wait_ready();
-
 
      if (tb_digest == expected)
        begin
@@ -303,11 +303,17 @@ module tb_sha256_core();
      db_error = 0;
      tc_ctr = tc_ctr + 1;
 
-     $display("*** TC %0d first block started.", tc_number);
-     tb_block = block1;
+     // Init the dut before the message.
      tb_init = 1;
      #(CLK_PERIOD);
      tb_init = 0;
+     #(CLK_PERIOD);
+
+     $display("*** TC %0d first block started.", tc_number);
+     tb_block = block1;
+     tb_next = 1;
+     #(CLK_PERIOD);
+     tb_next = 0;
      wait_ready();
      db_digest1 = tb_digest;
      $display("*** TC %0d first block done.", tc_number);
@@ -395,11 +401,17 @@ module tb_sha256_core();
       expected = 256'h7758a30bbdfc9cd92b284b05e9be9ca3d269d3d149e7e82ab4a9ed5e81fbcf9d;
 
       $display("Running test for 9 block issue.");
+
       tc_ctr = tc_ctr + 1;
-      tb_block = block0;
+
       tb_init = 1;
       #(CLK_PERIOD);
       tb_init = 0;
+
+      tb_block = block0;
+      tb_next = 1;
+      #(CLK_PERIOD);
+      tb_next = 0;
       wait_ready();
 
       tb_block = block1;
