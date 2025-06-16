@@ -421,12 +421,19 @@ module tb_sha256();
     begin
       $display("*** TC%01d - Single block test started.", tc_ctr);
 
-      write_block(block);
-
-      if (mode)
+      // Perform init.
+      if (mode) begin
         write_word(ADDR_CTRL, (CTRL_MODE_VALUE + CTRL_INIT_VALUE));
-      else
+      end else begin
         write_word(ADDR_CTRL, CTRL_INIT_VALUE);
+      end
+
+      // Write block and pull next.
+      write_block(block);
+      if (mode)
+        write_word(ADDR_CTRL, (CTRL_MODE_VALUE + CTRL_NEXT_VALUE));
+      else
+        write_word(ADDR_CTRL, CTRL_NEXT_VALUE);
 
       #(CLK_PERIOD);
       wait_ready();
@@ -469,13 +476,18 @@ module tb_sha256();
     begin
       $display("*** TC%01d - Double block test started.", tc_ctr);
 
-      // First block
-      write_block(block0);
-
+      // Init.
       if (mode)
         write_word(ADDR_CTRL, (CTRL_MODE_VALUE + CTRL_INIT_VALUE));
       else
         write_word(ADDR_CTRL, CTRL_INIT_VALUE);
+
+      // First block
+      write_block(block0);
+      if (mode)
+        write_word(ADDR_CTRL, (CTRL_MODE_VALUE + CTRL_NEXT_VALUE));
+      else
+        write_word(ADDR_CTRL, CTRL_NEXT_VALUE);
 
       #(CLK_PERIOD);
       wait_ready();
@@ -499,7 +511,6 @@ module tb_sha256();
 
       // Final block
       write_block(block1);
-
       if (mode)
         write_word(ADDR_CTRL, (CTRL_MODE_VALUE + CTRL_NEXT_VALUE));
       else
@@ -630,8 +641,13 @@ module tb_sha256();
 
       $display("Running test for 9 block issue.");
       tc_ctr = tc_ctr + 1;
-      write_block(block0);
+
+      // Init.
       write_word(ADDR_CTRL, (CTRL_MODE_VALUE + CTRL_INIT_VALUE));
+      #(CLK_PERIOD);
+
+      write_block(block0);
+      write_word(ADDR_CTRL, (CTRL_MODE_VALUE + CTRL_NEXT_VALUE));
       #(CLK_PERIOD);
       wait_ready();
 
