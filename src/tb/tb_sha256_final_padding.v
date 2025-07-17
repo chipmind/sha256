@@ -353,7 +353,7 @@ module tb_sha256_final_padding();
     begin : tc2
       tb_display_state = 1;
       tc_ctr = tc_ctr + 1;
-      $display("TC2 started: NIST FIPS 180-4 padding example.");
+      $display("TC2 started: NIST FIPS 180-4 'abc' message padding example.");
 
       // Init the DUT.
       $display("Init the core.");
@@ -406,7 +406,7 @@ module tb_sha256_final_padding();
     begin : tc3
       tb_display_state = 1;
       tc_ctr = tc_ctr + 1;
-      $display("TC%2d started: 64 letters of a", tc_ctr);
+      $display("TC%2d started: 64 letters of 'a'.", tc_ctr);
 
       $display("Init the core.");
       tb_init_in = 1'h1;
@@ -473,7 +473,7 @@ module tb_sha256_final_padding();
     begin : tc4
       tb_display_state = 1;
       tc_ctr = tc_ctr + 1;
-      $display("TC%2d started: 65 letters of a", tc_ctr);
+      $display("TC%2d started: 65 letters of 'a'", tc_ctr);
 
       $display("Init the core.");
       tb_init_in = 1'h1;
@@ -532,6 +532,50 @@ module tb_sha256_final_padding();
 
 
   //----------------------------------------------------------------
+  // tc5 Test with a single block message containing 63 'a'. This
+  // should trigger an extra block since the padding does not fit in
+  // the same block.
+  // ----------------------------------------------------------------
+  task tc5;
+    begin : tc5
+      tb_display_state = 1;
+      tc_ctr = tc_ctr + 1;
+      $display("TC5 started: Single block with 63 letters of 'a'.");
+
+      // Init the DUT.
+      $display("Init the core.");
+      tb_init_in = 1'h1;
+      #(CLK_PERIOD);
+      tb_init_in = 1'h0;
+      #(CLK_PERIOD);
+
+      $display("Starting processing final block.");
+      tb_block[511 : 0] = {{63{8'h61}}, 8'h0};
+      tb_final_len      = 6'd63;
+      tb_final          = 1'h1;
+      #(CLK_PERIOD);
+      tb_final          = 1'h0;
+
+      wait_ready();
+      $display("Core done.");
+
+      if (tb_core_digest == 256'h7d3e74a05d7db15bce4ad9ec0658ea98e3f06eeecf16b4c6fff2da457ddc2f34) begin
+	    $display("Correct digest: 0x%032x", tb_core_digest);
+      end
+      else begin
+	    $display("Incorrect digest: 0x%032x", tb_core_digest);
+	    $display("Expected digest:  0x7d3e74a05d7db15bce4ad9ec0658ea98e3f06eeecf16b4c6fff2da457ddc2f34");
+	    error_ctr = error_ctr + 1;
+      end
+
+      $display("TC%2d completed", tc_ctr);
+      $display();
+      tb_display_state = 1;
+    end
+  endtask // tc5
+
+
+  //----------------------------------------------------------------
   // sha256_final_padding_test
   //----------------------------------------------------------------
   initial
@@ -550,6 +594,7 @@ module tb_sha256_final_padding();
       tc2();
       tc3();
       tc4();
+      tc5();
 
       display_test_result();
 
