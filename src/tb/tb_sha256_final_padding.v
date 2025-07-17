@@ -301,11 +301,13 @@ module tb_sha256_final_padding();
       tc_ctr = tc_ctr + 1;
       $display("TC1 started: Padding of a zero length message.");
 
+      $display("Init the core.");
       #(CLK_PERIOD);
       tb_init_in = 1'h1;
       #(CLK_PERIOD);
       tb_init_in = 1'h0;
 
+      $display("Starting processing final block.");
       #(CLK_PERIOD);
       tb_block[511 : 0] = {512'h0};
       tb_final_len      = 9'h000;
@@ -313,16 +315,18 @@ module tb_sha256_final_padding();
       #(CLK_PERIOD);
       tb_final          = 1'h0;
 
+      #(CLK_PERIOD);
       if (tb_padded_block == {8'h80, 504'h0}) begin
-	    $display("Correct block: 0x%064x", tb_padded_block);
+	    $display("Correct final block: 0x%064x", tb_padded_block);
       end
       else begin
-	    $display("Incorrect block: 0x%064x", tb_padded_block);
-	    $display("Expected block:  0x%064x", {8'h80, 440'h0,64'h00000000});
+	    $display("Incorrect final block: 0x%064x", tb_padded_block);
+	    $display("Expected final block:  0x%064x", {8'h80, 440'h0,64'h00000000});
 	    error_ctr = error_ctr + 1;
       end
 
       wait_ready();
+      $display("Core done.");
 
       if (tb_core_digest == 256'he3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855) begin
 	    $display("Correct digest: 0x%032x", tb_core_digest);
@@ -361,48 +365,50 @@ module tb_sha256_final_padding();
       tb_init_in = 1'h0;
       #(CLK_PERIOD);
 
-      $display("Starting block processing.");
+      $display("Starting processing final block.");
       tb_block[511 : 0] = {24'h616263, 488'h0};
       tb_final_len      = 6'd3;
       tb_final          = 1'h1;
       #(CLK_PERIOD);
       tb_final          = 1'h0;
 
-      // Wait a few cycles.
-      $display("Waiting for block processing to be completed.");
-      #(2 * CLK_PERIOD);
-      wait_ready();
-
-      // Show the block out.
-      $display("final_len_reg: 0x%02h", dut.final_len_reg);
-      $display("bit_ctr_reg:   0x%08x", dut.bit_ctr_reg);
-      $display("block_reg:     0x%0128x", dut.block_reg);
-      $display("final_block:   0x%0128x", dut.final_block);
-      $display("Current block: 0x%0128x", tb_padded_block);
-      $display("");
-
-      while (!tb_padded_ready) begin
-        #(CLK_PERIOD);
+      #(CLK_PERIOD);
+      if (tb_padded_block == {24'h616263, 8'h80, 416'h0, 64'h00000018}) begin
+	    $display("Correct final block: 0x%064x", tb_padded_block);
+      end
+      else begin
+	    $display("Incorrect final block: 0x%064x", tb_padded_block);
+	    $display("Expected final block:  0x%064x", {24'h616263, 8'h80, 416'h0, 64'h00000018});
+	    error_ctr = error_ctr + 1;
       end
 
-      // Burn some cycles for the waveform. Again.
-      #(8 * CLK_PERIOD);
+      wait_ready();
+      $display("Core done.");
 
-      // Show the digest.
-      $display("Generated digest: 0x064%x", tb_core_digest);
-      $display("");
+      if (tb_core_digest == 256'hba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad) begin
+	    $display("Correct digest: 0x%032x", tb_core_digest);
+      end
+      else begin
+	    $display("Incorrect digest: 0x%032x", tb_core_digest);
+	    $display("Expected digest:  0xba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+	    error_ctr = error_ctr + 1;
+      end
+
+      $display("TC%2d completed", tc_ctr);
+      $display();
+      tb_display_state = 1;
     end
   endtask // tc2
 
 
   //----------------------------------------------------------------
-  // tc2
+  // tc3
   // Test that extends the FIPS 180-4 padding example in chapter
   // 5.1.1 with a few more chars. This still fits within the final
   // block.
   //----------------------------------------------------------------
-//  task tc2;
-//    begin : tc2
+//  task tc3;
+//    begin : tc3
 //      tb_display_state = 1;
 //      tc_ctr = tc_ctr + 1;
 //      $display("TC%2d started: Extended NIST FIPS 180-4 padding example.", tc_ctr);
@@ -510,7 +516,7 @@ module tb_sha256_final_padding();
       init_sim();
       reset_dut();
       tc1();
-//      tc2();
+      tc2();
 //      tc2();
 //      tc3();
 
