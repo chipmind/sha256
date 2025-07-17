@@ -60,7 +60,7 @@ module tb_sha256_final_padding();
 
   reg            tb_clk;
   reg            tb_reset_n;
-  reg            tb_init;
+  reg            tb_init_in;
   reg            tb_next;
   reg            tb_final;
   reg [5 : 0]    tb_final_len;
@@ -84,7 +84,7 @@ module tb_sha256_final_padding();
 			   .clk(tb_clk),
 			   .reset_n(tb_reset_n),
 
-			   .init_in(tb_init),
+			   .init_in(tb_init_in),
 			   .next_in(tb_next),
 			   .final_in(tb_final),
 			   .final_len(tb_final_len),
@@ -178,6 +178,26 @@ module tb_sha256_final_padding();
 
 
   //----------------------------------------------------------------
+  // wait_ready()
+  //
+  // Wait for the ready flag in the dut to be set.
+  //
+  // Note: It is the callers responsibility to call the function
+  // when the dut is actively processing and will in fact at some
+  // point set the flag.
+  //----------------------------------------------------------------
+  task wait_ready;
+    begin
+      #(CLK_PERIOD);
+      while (!tb_padded_ready)
+        begin
+          #(CLK_PERIOD);
+        end
+    end
+  endtask // wait_ready
+
+
+  //----------------------------------------------------------------
   // sys_monitor()
   //
   // An always running process that creates a cycle counter and
@@ -261,7 +281,7 @@ module tb_sha256_final_padding();
 
       tb_clk           = 1'h0;
       tb_reset_n       = 1'h1;
-      tb_init          = 1'h0;
+      tb_init_in          = 1'h0;
       tb_next          = 1'h0;
       tb_final         = 1'h0;
       tb_final_len     = 6'h0;
@@ -272,80 +292,107 @@ module tb_sha256_final_padding();
 
 
   //----------------------------------------------------------------
-  // tc0
-  // Test that padding for a zero length message is correct.
-  //----------------------------------------------------------------
-//  task tc0;
-//    begin : tc1
-//      tb_display_state = 1;
-//      tc_ctr = tc_ctr + 1;
-//      $display("TC0 started: Padding of a zero length message.");
-//
-//      tb_init_in = 1'h1;
-//      #(CLK_PERIOD);
-//      tb_init_in = 1'h0;
-//
-//      #(CLK_PERIOD);
-//      tb_block_in[511 : 0] = {512'h0};
-//      tb_final_len         = 9'h000;
-//      tb_final_in          = 1'h1;
-//      #(CLK_PERIOD);
-//      tb_final_in          = 1'h0;
-//
-//      #(CLK_PERIOD);
-//      if (tb_block_out == {8'h80, 495'h0,9'h020}) begin
-//	$display("Correct block: 0x%064x", tb_block_out);
-//      end
-//      else begin
-//	$display("Incorrect block: 0x%064x", tb_block_out);
-//	$display("Expected block:  0x%064x", {24'h616263, 8'h80, 416'h0,64'h00000018});
-//	error_ctr = error_ctr + 1;
-//      end
-//
-//      $display("TC%2d completed", tc_ctr);
-//      $display();
-//      tb_display_state = 1;
-//    end
-//  endtask // tc1
-
-
-  //----------------------------------------------------------------
   // tc1
-  // Test that the FIPS 180-4 padding example in chapter
-  // 5.1.1 works as intended.
+  // Test that padding for a zero length message is correct.
   //----------------------------------------------------------------
   task tc1;
     begin : tc1
       tb_display_state = 1;
       tc_ctr = tc_ctr + 1;
-      $display("TC%2d started: NIST FIPS 180-4 padding example.", tc_ctr);
-
-      // Init the DUT.
-      tb_init = 1'h1;
-      #(CLK_PERIOD);
-      tb_init = 1'h0;
+      $display("TC1 started: Padding of a zero length message.");
 
       #(CLK_PERIOD);
-      tb_block[511 : 0] = {24'h616263, 488'h0};
-      tb_final_len      = 6'd24;
+      tb_init_in = 1'h1;
+      #(CLK_PERIOD);
+      tb_init_in = 1'h0;
+
+      #(CLK_PERIOD);
+      tb_block[511 : 0] = {512'h0};
+      tb_final_len      = 9'h000;
       tb_final          = 1'h1;
       #(CLK_PERIOD);
       tb_final          = 1'h0;
 
-      // Wait a few seconds.
+      if (tb_padded_block == {8'h80, 504'h0}) begin
+	    $display("Correct block: 0x%064x", tb_padded_block);
+      end
+      else begin
+	    $display("Incorrect block: 0x%064x", tb_padded_block);
+	    $display("Expected block:  0x%064x", {8'h80, 440'h0,64'h00000000});
+	    error_ctr = error_ctr + 1;
+      end
+
+      wait_ready();
+
+      if (tb_core_digest == 256'he3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855) begin
+	    $display("Correct digest: 0x%032x", tb_core_digest);
+      end
+      else begin
+	    $display("Incorrect digest: 0x%032x", tb_core_digest);
+	    $display("Expected digest:  0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+	    error_ctr = error_ctr + 1;
+      end
+
+      $display("TC%2d completed", tc_ctr);
+      $display();
+      tb_display_state = 1;
+    end
+  endtask // tc1
+
+
+  //----------------------------------------------------------------
+  // tc2
+  // Test that the FIPS 180-4 padding example in chapter
+  // 5.1.1 works as intended. I.e. "the abc" message.
+  //----------------------------------------------------------------
+  task tc2;
+    begin : tc2
+      tb_display_state = 1;
+      tc_ctr = tc_ctr + 1;
+      $display("TC2 started: NIST FIPS 180-4 padding example.");
+
+      // Burn some cycles for the waveform.
+      #(8 * CLK_PERIOD);
+
+      // Init the DUT.
+      $display("Init the core.");
+      tb_init_in = 1'h1;
+      #(CLK_PERIOD);
+      tb_init_in = 1'h0;
       #(CLK_PERIOD);
 
+      $display("Starting block processing.");
+      tb_block[511 : 0] = {24'h616263, 488'h0};
+      tb_final_len      = 6'd3;
+      tb_final          = 1'h1;
+      #(CLK_PERIOD);
+      tb_final          = 1'h0;
+
+      // Wait a few cycles.
+      $display("Waiting for block processing to be completed.");
+      #(2 * CLK_PERIOD);
+      wait_ready();
+
       // Show the block out.
+      $display("final_len_reg: 0x%02h", dut.final_len_reg);
+      $display("bit_ctr_reg:   0x%08x", dut.bit_ctr_reg);
+      $display("block_reg:     0x%0128x", dut.block_reg);
+      $display("final_block:   0x%0128x", dut.final_block);
       $display("Current block: 0x%0128x", tb_padded_block);
+      $display("");
 
       while (!tb_padded_ready) begin
         #(CLK_PERIOD);
       end
 
+      // Burn some cycles for the waveform. Again.
+      #(8 * CLK_PERIOD);
+
       // Show the digest.
       $display("Generated digest: 0x064%x", tb_core_digest);
+      $display("");
     end
-  endtask // tc1
+  endtask // tc2
 
 
   //----------------------------------------------------------------
@@ -360,9 +407,9 @@ module tb_sha256_final_padding();
 //      tc_ctr = tc_ctr + 1;
 //      $display("TC%2d started: Extended NIST FIPS 180-4 padding example.", tc_ctr);
 //
-//      tb_init_in = 1'h1;
+//      tb_init_in_in = 1'h1;
 //      #(CLK_PERIOD);
-//      tb_init_in = 1'h0;
+//      tb_init_in_in = 1'h0;
 //
 //      #(CLK_PERIOD);
 //      tb_block_in[511 : 0] = {72'h616263616263616263, 440'h0};
@@ -401,9 +448,9 @@ module tb_sha256_final_padding();
 //      tc_ctr = tc_ctr + 1;
 //      $display("TC%2d started: Padding that does not fit in the final block.", tc_ctr);
 //
-//      tb_init_in = 1'h1;
+//      tb_init_in_in = 1'h1;
 //      #(CLK_PERIOD);
-//      tb_init_in = 1'h0;
+//      tb_init_in_in = 1'h0;
 //
 //      #(CLK_PERIOD);
 //      tb_block_in[511 : 0] = {{15{32'h13371337}}, 32'h0};
@@ -456,9 +503,14 @@ module tb_sha256_final_padding();
       $display("----------------------------------------------");
       $display("");
 
+      $display("Dumping top vcd-file.");
+      $dumpfile("final_padding_wave.vcd");
+      $dumpvars(0, tb_sha256_final_padding);
+
       init_sim();
       reset_dut();
       tc1();
+//      tc2();
 //      tc2();
 //      tc3();
 

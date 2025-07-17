@@ -63,42 +63,41 @@ TOP_TB_SRC = ../src/tb/tb_sha256.v
 AXI4_SRC = ../src/interfaces/axi4/rtl/sha256_axi4.v ../src/interfaces/axi4/rtl/sha256_axi4_slave.v $(CORE_SRC)
 AXI4_TB_SRC = ../src/interfaces/axi4/tb/tb_sha256_axi4.v
 
-PADDING_SRC = ../src/rtl/sha256_final_padding.v $(CORE_SRC)
+PADDING_SRC = ../src/rtl/sha256_final_padding.v
 PADDING_TB_SRC = ../src/tb/tb_sha256_final_padding.v
-
 
 CC = iverilog
 CC_FLAGS = -Wall
 
 LINT = verilator
-LINT_FLAGS = +1364-2001ext+ --lint-only -Wall -Wno-fatal -Wno-DECLFILENAME
-
-
-all: top.sim core.sim wmem.sim axi4.sim padding.sim
-
-
-top.sim: $(TOP_TB_SRC) $(TOP_SRC)
-	$(CC) $(CC_FLAGS) -o top.sim $(TOP_TB_SRC) $(TOP_SRC)
-
-
-core.sim: $(CORE_TB_SRC) $(CORE_SRC)
-	$(CC) $(CC_FLAGS) -o core.sim $(CORE_SRC) $(CORE_TB_SRC)
-
-
-wmem.sim: $(WMEM_SRC) $(WMEM_TB_SRC)
-	$(CC) $(CC_FLAGS) -o wmem.sim $(WMEM_SRC) $(WMEM_TB_SRC)
-
-
-axi4.sim: $(AXI4_SRC) $(AXI4_TB_SRC)
-	$(CC) $(CC_FLAGS) -o axi4.sim  $(AXI4_SRC) $(AXI4_TB_SRC)
-
-
-padding.sim: $(PADDING_SRC) $(PADDING_TB_SRC)
-	$(CC) $(CC_FLAGS) -o padding.sim $(PADDING_SRC) $(PADDING_TB_SRC)
+LINT_FLAGS = +1364-2005ext+ --lint-only -Wall -Wno-fatal -Wno-DECLFILENAME
 
 
 SIM ?= icarus
 REFERENCE_FILE ?= reference_file
+
+
+all: top.sim core.sim wmem.sim axi4.sim final_padding.sim
+
+
+top.sim: $(TOP_TB_SRC) $(TOP_SRC)
+	$(CC) $(CC_FLAGS) -o top.sim $^
+
+
+core.sim: $(CORE_TB_SRC) $(CORE_SRC)
+	$(CC) $(CC_FLAGS) -o core.sim $^
+
+
+wmem.sim: $(WMEM_TB_SRC) $(WMEM_SRC)
+	$(CC) $(CC_FLAGS) -o wmem.sim $^
+
+
+axi4.sim: $(AXI4_TB_SRC) $(AXI4_SRC)
+	$(CC) $(CC_FLAGS) -o axi4.sim $^
+
+
+final_padding.sim:  $(PADDING_TB_SRC) $(PADDING_SRC) $(CORE_SRC)
+	$(CC) $(CC_FLAGS) -o final_padding.sim $^
 
 reference_file:
 	dd if=/dev/random of=$@ count=1 bs=1k
@@ -129,16 +128,20 @@ sim-axi4: axi4.sim
 	./axi4.sim
 
 
+sim-padding: final_padding.sim
+	./final_padding.sim
+
+
 lint: $(TOP_SRC)
-	$(LINT) $(LINT_FLAGS) $(TOP_SRC)
+	$(LINT) $(LINT_FLAGS) $^
 
 
 lint-axi4: $(AXI4_SRC)
-	$(LINT) $(LINT_FLAGS) $(AXI4_SRC)
+	$(LINT) $(LINT_FLAGS) $^
 
 
-lint-padding: $(AXI4_SRC)
-	$(LINT) $(LINT_FLAGS) $(AXI4_SRC)
+lint-padding: $(PADDING_SRC)
+	$(LINT) $(LINT_FLAGS) $^
 
 
 clean:
@@ -146,7 +149,8 @@ clean:
 	rm -f core.sim
 	rm -f wmem.sim
 	rm -f axi4.sim
-	rm -r padding.sim
+	rm -f final_padding.sim
+	rm -f final_padding_wave.vcd
 
 help:
 	@echo "Supported targets:"
@@ -166,7 +170,7 @@ help:
 	@echo "lint:         Run the linter on the standard sha256 implementation."
 	@echo "lint-axi4:    Run the linter on the core with AXI4 interface."
 	@echo "lint-padding: Run the linter on the core with AXI4 interface."
-	@echo "clean:        Delete all built files."
+	@echo "clean:        Delete all generated files."
 
 #===================================================================
 # EOF Makefile
