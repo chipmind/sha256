@@ -280,7 +280,7 @@ module sha256_final_padding(
       end
 
       if (bit_ctr_next) begin
-	    bit_ctr_new = bit_ctr_reg + {55'h0, 9'h100};
+	    bit_ctr_new = bit_ctr_reg + {54'h0, 10'h200};
  	    bit_ctr_we  = 1'h1;
       end
 
@@ -316,9 +316,11 @@ module sha256_final_padding(
 	      end
 
 	      if (next_in_reg) begin
-	        ready_out_new      = core_ready_reg;
-            block_out_mux_ctrl = NEXT_BLOCK;
-            bit_ctr_next       = 1'h1;
+	        ready_out_new                 = 1'h0;
+            block_out_mux_ctrl            = NEXT_BLOCK;
+            bit_ctr_next                  = 1'h1;
+	        sha256_final_padding_ctrl_new = CTRL_WAIT_FINAL;
+	        sha256_final_padding_ctrl_we  = 1'h1;
 	      end
 
 	      if (final_in_reg) begin
