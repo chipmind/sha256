@@ -627,8 +627,8 @@ module tb_sha256_core();
       reset_dut();
       dump_dut_state();
 
-//      sha256_core_test();
-//      issue_test();
+      sha256_core_test();
+      issue_test();
       full_block_and_padding_test();
       full_block_and_a_byte_padding_test();
 
