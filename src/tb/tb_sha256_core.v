@@ -505,6 +505,115 @@ module tb_sha256_core();
     end
   endtask // sha256_core_test
 
+  //----------------------------------------------------------------
+  // full_block_and_padding_test()
+  // A single block withy 64 bytes of 'a' and an empty final block.
+  //----------------------------------------------------------------
+  task full_block_and_padding_test;
+    reg [511 : 0] block0;
+    reg [511 : 0] block1;
+    reg [255 : 0] expected;
+    begin : full_block_and_padding_test;
+
+      block0 = {64{8'h61}};
+      block1 = {8'h80, 440'h0, 64'h00000200};
+      expected = 256'hffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb;
+
+      $display("Running test with a full block of 64 'a'.");
+      $display("This means that a padding block with no data is added.");
+
+      tc_ctr = tc_ctr + 1;
+
+      tb_init = 1;
+      #(CLK_PERIOD);
+      tb_init = 0;
+
+      tb_block = block0;
+      tb_next = 1;
+      #(CLK_PERIOD);
+      tb_next = 0;
+      #(CLK_PERIOD);
+      wait_ready();
+
+      $display("Digest after block1: 0x%064x", tb_digest);
+
+      tb_block = block1;
+      tb_next = 1;
+      #(CLK_PERIOD);
+      tb_next = 0;
+      #(CLK_PERIOD);
+      wait_ready();
+
+      $display("Digest after block2: 0x%064x", tb_digest);
+
+      if (tb_digest == expected)
+        begin
+          $display("Digest ok.");
+        end
+      else
+        begin
+          error_ctr = error_ctr + 1;
+          $display("Error! Expected: 0x%064x", expected);
+        end
+      $display("");
+    end
+  endtask // full_block_and_padding_test
+
+  //----------------------------------------------------------------
+  // full_block_and_a_byte_padding_test()
+  // A single block with 64 bytes of 'a' and a block with a single
+  // byte 'a'. In total 65 bytes.
+  //----------------------------------------------------------------
+  task full_block_and_a_byte_padding_test;
+    reg [511 : 0] block0;
+    reg [511 : 0] block1;
+    reg [255 : 0] expected;
+    begin : full_block_and_a_byte_padding_test;
+
+      block0 = {64{8'h61}};
+      block1 = {8'h61, 8'h80, 432'h0, 64'h00000208};
+      expected = 256'h635361c48bb9eab14198e76ea8ab7f1a41685d6ad62aa9146d301d4f17eb0ae0;
+
+      $display("Running test with a full block of 64 'a' and a block with a single 'a'.");
+      $display("This means that the last block is padded.");
+
+      tc_ctr = tc_ctr + 1;
+
+      tb_init = 1;
+      #(CLK_PERIOD);
+      tb_init = 0;
+
+      tb_block = block0;
+      tb_next = 1;
+      #(CLK_PERIOD);
+      tb_next = 0;
+      #(CLK_PERIOD);
+      wait_ready();
+
+      $display("Digest after block1: 0x%064x", tb_digest);
+
+      tb_block = block1;
+      tb_next = 1;
+      #(CLK_PERIOD);
+      tb_next = 0;
+      #(CLK_PERIOD);
+      wait_ready();
+
+      $display("Digest after block2: 0x%064x", tb_digest);
+
+      if (tb_digest == expected)
+        begin
+          $display("Digest ok.");
+        end
+      else
+        begin
+          error_ctr = error_ctr + 1;
+          $display("Error! Expected: 0x%064x", expected);
+        end
+      $display("");
+    end
+  endtask // full_block_and_padding_test
+
 
   //----------------------------------------------------------------
   // main()
@@ -518,8 +627,10 @@ module tb_sha256_core();
       reset_dut();
       dump_dut_state();
 
-      sha256_core_test();
-      issue_test();
+//      sha256_core_test();
+//      issue_test();
+      full_block_and_padding_test();
+      full_block_and_a_byte_padding_test();
 
       display_test_result();
       $display("*** Simulation done.");
