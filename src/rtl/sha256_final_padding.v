@@ -122,89 +122,6 @@ module sha256_final_padding(
 
 
   //----------------------------------------------------------------
-  //
-  //----------------------------------------------------------------
-  function automatic [511 : 0] gen_padded_block(
-                                               input [511 : 0] msg_block,
-                                               input [63 : 0] msg_len,
-                                               input [5 : 0] num_bytes
-                                               );
-    begin
-      case(num_bytes)
-        00: gen_padded_block = {8'h80, 440'h0, msg_len};
-        01: gen_padded_block = {msg_block[511 : 504], 8'h80, 432'h0, msg_len};
-        02: gen_padded_block = {msg_block[511 : 496], 8'h80, 424'h0, msg_len};
-        03: gen_padded_block = {msg_block[511 : 488], 8'h80, 416'h0, msg_len};
-        04: gen_padded_block = {msg_block[511 : 480], 8'h80, 408'h0, msg_len};
-        05: gen_padded_block = {msg_block[511 : 472], 8'h80, 400'h0, msg_len};
-        06: gen_padded_block = {msg_block[511 : 464], 8'h80, 392'h0, msg_len};
-        07: gen_padded_block = {msg_block[511 : 456], 8'h80, 384'h0, msg_len};
-        08: gen_padded_block = {msg_block[511 : 448], 8'h80, 376'h0, msg_len};
-        09: gen_padded_block = {msg_block[511 : 440], 8'h80, 368'h0, msg_len};
-        10: gen_padded_block = {msg_block[511 : 432], 8'h80, 360'h0, msg_len};
-        11: gen_padded_block = {msg_block[511 : 424], 8'h80, 352'h0, msg_len};
-        12: gen_padded_block = {msg_block[511 : 416], 8'h80, 344'h0, msg_len};
-        13: gen_padded_block = {msg_block[511 : 408], 8'h80, 336'h0, msg_len};
-        14: gen_padded_block = {msg_block[511 : 400], 8'h80, 328'h0, msg_len};
-        15: gen_padded_block = {msg_block[511 : 392], 8'h80, 320'h0, msg_len};
-        16: gen_padded_block = {msg_block[511 : 384], 8'h80, 312'h0, msg_len};
-        17: gen_padded_block = {msg_block[511 : 376], 8'h80, 304'h0, msg_len};
-        18: gen_padded_block = {msg_block[511 : 368], 8'h80, 296'h0, msg_len};
-        19: gen_padded_block = {msg_block[511 : 360], 8'h80, 288'h0, msg_len};
-        20: gen_padded_block = {msg_block[511 : 352], 8'h80, 280'h0, msg_len};
-        21: gen_padded_block = {msg_block[511 : 344], 8'h80, 272'h0, msg_len};
-        22: gen_padded_block = {msg_block[511 : 336], 8'h80, 264'h0, msg_len};
-        23: gen_padded_block = {msg_block[511 : 328], 8'h80, 256'h0, msg_len};
-        24: gen_padded_block = {msg_block[511 : 320], 8'h80, 248'h0, msg_len};
-        25: gen_padded_block = {msg_block[511 : 312], 8'h80, 240'h0, msg_len};
-        26: gen_padded_block = {msg_block[511 : 304], 8'h80, 232'h0, msg_len};
-        27: gen_padded_block = {msg_block[511 : 296], 8'h80, 224'h0, msg_len};
-        28: gen_padded_block = {msg_block[511 : 288], 8'h80, 216'h0, msg_len};
-        29: gen_padded_block = {msg_block[511 : 280], 8'h80, 208'h0, msg_len};
-        30: gen_padded_block = {msg_block[511 : 272], 8'h80, 200'h0, msg_len};
-        31: gen_padded_block = {msg_block[511 : 264], 8'h80, 192'h0, msg_len};
-        32: gen_padded_block = {msg_block[511 : 256], 8'h80, 184'h0, msg_len};
-        33: gen_padded_block = {msg_block[511 : 248], 8'h80, 176'h0, msg_len};
-        34: gen_padded_block = {msg_block[511 : 240], 8'h80, 168'h0, msg_len};
-        35: gen_padded_block = {msg_block[511 : 232], 8'h80, 160'h0, msg_len};
-        36: gen_padded_block = {msg_block[511 : 224], 8'h80, 152'h0, msg_len};
-        37: gen_padded_block = {msg_block[511 : 216], 8'h80, 144'h0, msg_len};
-        38: gen_padded_block = {msg_block[511 : 208], 8'h80, 136'h0, msg_len};
-        39: gen_padded_block = {msg_block[511 : 200], 8'h80, 128'h0, msg_len};
-        40: gen_padded_block = {msg_block[511 : 192], 8'h80, 120'h0, msg_len};
-        41: gen_padded_block = {msg_block[511 : 184], 8'h80, 112'h0, msg_len};
-        42: gen_padded_block = {msg_block[511 : 176], 8'h80, 104'h0, msg_len};
-        43: gen_padded_block = {msg_block[511 : 168], 8'h80, 096'h0, msg_len};
-        44: gen_padded_block = {msg_block[511 : 160], 8'h80, 088'h0, msg_len};
-        45: gen_padded_block = {msg_block[511 : 152], 8'h80, 080'h0, msg_len};
-        46: gen_padded_block = {msg_block[511 : 144], 8'h80, 072'h0, msg_len};
-        47: gen_padded_block = {msg_block[511 : 136], 8'h80, 064'h0, msg_len};
-        48: gen_padded_block = {msg_block[511 : 128], 8'h80, 056'h0, msg_len};
-        49: gen_padded_block = {msg_block[511 : 120], 8'h80, 048'h0, msg_len};
-        50: gen_padded_block = {msg_block[511 : 112], 8'h80, 040'h0, msg_len};
-        51: gen_padded_block = {msg_block[511 : 104], 8'h80, 032'h0, msg_len};
-        52: gen_padded_block = {msg_block[511 : 096], 8'h80, 024'h0, msg_len};
-        53: gen_padded_block = {msg_block[511 : 088], 8'h80, 016'h0, msg_len};
-        54: gen_padded_block = {msg_block[511 : 080], 8'h80, 008'h0, msg_len};
-        55: gen_padded_block = {msg_block[511 : 072], 8'h80, msg_len};
-        56: gen_padded_block = {msg_block[511 : 064], 8'h80, 056'h0};
-        57: gen_padded_block = {msg_block[511 : 056], 8'h80, 048'h0};
-        58: gen_padded_block = {msg_block[511 : 048], 8'h80, 040'h0};
-        59: gen_padded_block = {msg_block[511 : 040], 8'h80, 032'h0};
-        60: gen_padded_block = {msg_block[511 : 032], 8'h80, 024'h0};
-        61: gen_padded_block = {msg_block[511 : 024], 8'h80, 016'h0};
-        62: gen_padded_block = {msg_block[511 : 016], 8'h80, 008'h0};
-        63: gen_padded_block = {msg_block[511 : 008], 8'h80};
-        default
-          begin
-            gen_padded_block = 512'h0;
-          end
-      endcase // case (num_bytes)
-    end
-  endfunction // gen_padded_block
-
-
-  //----------------------------------------------------------------
   // reg_update
   //----------------------------------------------------------------
   always @ (posedge clk)
@@ -248,11 +165,81 @@ module sha256_final_padding(
 
 
   //----------------------------------------------------------------
-  // block_out_mux
+  // block_out_logic
   //----------------------------------------------------------------
   always @*
-    begin : block_out_mux
-      final_block = gen_padded_block(block_reg, bit_ctr_reg, final_len_reg);
+    begin : block_out_logic
+      case(final_len_reg)
+        00: final_block = {8'h80, 440'h0, bit_ctr_reg};
+        01: final_block = {block_reg[511 : 504], 8'h80, 432'h0, bit_ctr_reg};
+        02: final_block = {block_reg[511 : 496], 8'h80, 424'h0, bit_ctr_reg};
+        03: final_block = {block_reg[511 : 488], 8'h80, 416'h0, bit_ctr_reg};
+        04: final_block = {block_reg[511 : 480], 8'h80, 408'h0, bit_ctr_reg};
+        05: final_block = {block_reg[511 : 472], 8'h80, 400'h0, bit_ctr_reg};
+        06: final_block = {block_reg[511 : 464], 8'h80, 392'h0, bit_ctr_reg};
+        07: final_block = {block_reg[511 : 456], 8'h80, 384'h0, bit_ctr_reg};
+        08: final_block = {block_reg[511 : 448], 8'h80, 376'h0, bit_ctr_reg};
+        09: final_block = {block_reg[511 : 440], 8'h80, 368'h0, bit_ctr_reg};
+        10: final_block = {block_reg[511 : 432], 8'h80, 360'h0, bit_ctr_reg};
+        11: final_block = {block_reg[511 : 424], 8'h80, 352'h0, bit_ctr_reg};
+        12: final_block = {block_reg[511 : 416], 8'h80, 344'h0, bit_ctr_reg};
+        13: final_block = {block_reg[511 : 408], 8'h80, 336'h0, bit_ctr_reg};
+        14: final_block = {block_reg[511 : 400], 8'h80, 328'h0, bit_ctr_reg};
+        15: final_block = {block_reg[511 : 392], 8'h80, 320'h0, bit_ctr_reg};
+        16: final_block = {block_reg[511 : 384], 8'h80, 312'h0, bit_ctr_reg};
+        17: final_block = {block_reg[511 : 376], 8'h80, 304'h0, bit_ctr_reg};
+        18: final_block = {block_reg[511 : 368], 8'h80, 296'h0, bit_ctr_reg};
+        19: final_block = {block_reg[511 : 360], 8'h80, 288'h0, bit_ctr_reg};
+        20: final_block = {block_reg[511 : 352], 8'h80, 280'h0, bit_ctr_reg};
+        21: final_block = {block_reg[511 : 344], 8'h80, 272'h0, bit_ctr_reg};
+        22: final_block = {block_reg[511 : 336], 8'h80, 264'h0, bit_ctr_reg};
+        23: final_block = {block_reg[511 : 328], 8'h80, 256'h0, bit_ctr_reg};
+        24: final_block = {block_reg[511 : 320], 8'h80, 248'h0, bit_ctr_reg};
+        25: final_block = {block_reg[511 : 312], 8'h80, 240'h0, bit_ctr_reg};
+        26: final_block = {block_reg[511 : 304], 8'h80, 232'h0, bit_ctr_reg};
+        27: final_block = {block_reg[511 : 296], 8'h80, 224'h0, bit_ctr_reg};
+        28: final_block = {block_reg[511 : 288], 8'h80, 216'h0, bit_ctr_reg};
+        29: final_block = {block_reg[511 : 280], 8'h80, 208'h0, bit_ctr_reg};
+        30: final_block = {block_reg[511 : 272], 8'h80, 200'h0, bit_ctr_reg};
+        31: final_block = {block_reg[511 : 264], 8'h80, 192'h0, bit_ctr_reg};
+        32: final_block = {block_reg[511 : 256], 8'h80, 184'h0, bit_ctr_reg};
+        33: final_block = {block_reg[511 : 248], 8'h80, 176'h0, bit_ctr_reg};
+        34: final_block = {block_reg[511 : 240], 8'h80, 168'h0, bit_ctr_reg};
+        35: final_block = {block_reg[511 : 232], 8'h80, 160'h0, bit_ctr_reg};
+        36: final_block = {block_reg[511 : 224], 8'h80, 152'h0, bit_ctr_reg};
+        37: final_block = {block_reg[511 : 216], 8'h80, 144'h0, bit_ctr_reg};
+        38: final_block = {block_reg[511 : 208], 8'h80, 136'h0, bit_ctr_reg};
+        39: final_block = {block_reg[511 : 200], 8'h80, 128'h0, bit_ctr_reg};
+        40: final_block = {block_reg[511 : 192], 8'h80, 120'h0, bit_ctr_reg};
+        41: final_block = {block_reg[511 : 184], 8'h80, 112'h0, bit_ctr_reg};
+        42: final_block = {block_reg[511 : 176], 8'h80, 104'h0, bit_ctr_reg};
+        43: final_block = {block_reg[511 : 168], 8'h80, 096'h0, bit_ctr_reg};
+        44: final_block = {block_reg[511 : 160], 8'h80, 088'h0, bit_ctr_reg};
+        45: final_block = {block_reg[511 : 152], 8'h80, 080'h0, bit_ctr_reg};
+        46: final_block = {block_reg[511 : 144], 8'h80, 072'h0, bit_ctr_reg};
+        47: final_block = {block_reg[511 : 136], 8'h80, 064'h0, bit_ctr_reg};
+        48: final_block = {block_reg[511 : 128], 8'h80, 056'h0, bit_ctr_reg};
+        49: final_block = {block_reg[511 : 120], 8'h80, 048'h0, bit_ctr_reg};
+        50: final_block = {block_reg[511 : 112], 8'h80, 040'h0, bit_ctr_reg};
+        51: final_block = {block_reg[511 : 104], 8'h80, 032'h0, bit_ctr_reg};
+        52: final_block = {block_reg[511 : 096], 8'h80, 024'h0, bit_ctr_reg};
+        53: final_block = {block_reg[511 : 088], 8'h80, 016'h0, bit_ctr_reg};
+        54: final_block = {block_reg[511 : 080], 8'h80, 008'h0, bit_ctr_reg};
+        55: final_block = {block_reg[511 : 072], 8'h80, bit_ctr_reg};
+        56: final_block = {block_reg[511 : 064], 8'h80, 056'h0};
+        57: final_block = {block_reg[511 : 056], 8'h80, 048'h0};
+        58: final_block = {block_reg[511 : 048], 8'h80, 040'h0};
+        59: final_block = {block_reg[511 : 040], 8'h80, 032'h0};
+        60: final_block = {block_reg[511 : 032], 8'h80, 024'h0};
+        61: final_block = {block_reg[511 : 024], 8'h80, 016'h0};
+        62: final_block = {block_reg[511 : 016], 8'h80, 008'h0};
+        63: final_block = {block_reg[511 : 008], 8'h80};
+        default
+          begin
+            final_block = 512'h0;
+          end
+      endcase // case (final_len_reg)
+
       extra_block = {448'h0, bit_ctr_reg};
 
       case (block_out_mux_ctrl)
